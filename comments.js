@@ -1,33 +1,36 @@
-// create a web server
-var http = require('http');
-var url = require('url');
-var fs = require('fs');
-var path = require('path');
-var comments = [];
-var server = http.createServer(function(req, res) {
-    var urlObj = url.parse(req.url, true);
-    var pathname = urlObj.pathname;
-    if (pathname === '/') {
-        fs.readFile('./index.html', function(err, data) {
-            if (err) {
-                console.log(err);
-            }
-            res.writeHead(200, { 'Content-Type': 'text/html' });
-            res.end(data);
-        });
-    } else if (pathname === '/comment') {
-        var comment = urlObj.query;
-        comments.push(comment);
-        res.end(JSON.stringify(comments));
-    } else {
-        fs.readFile('.' + pathname, function(err, data) {
-            if (err) {
-                console.log(err);
-            }
-            res.end(data);
-        });
-    }
+// Create web server
+// 1. npm install express
+// 2. npm install body-parser
+// 3. npm install mongodb
+// 4. npm install mongoose
+// 5. npm install cors
+// 6. npm install nodemon
+
+const express = require('express');
+const bodyParser = require('body-parser');
+const mongoose = require('mongoose');
+const cors = require('cors');
+
+const Comment = require('./models/Comment');
+
+const app = express();
+
+app.use(cors());
+app.use(bodyParser.json());
+
+mongoose.connect('mongodb://localhost/comments');
+
+app.get('/comments', async (req, res) => {
+    const comments = await Comment.find();
+    res.json(comments);
 });
-server.listen(3000, function() {
-    console.log('server is listening on port 3000');
+
+app.post('/comments', async (req, res) => {
+    const comment = new Comment(req.body);
+    await comment.save();
+    res.json(comment);
+});
+
+app.listen(3000, () => {
+    console.log('Server started');
 });
